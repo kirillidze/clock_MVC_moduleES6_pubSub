@@ -33,7 +33,7 @@ class ClockView {
             if (model.timezone >= 0) {
                 this.timezone.textContent = '+' + model.timezone + ' GMT';
             } else {
-                this.timezone.textContent = '+' + model.timezone + ' GMT';
+                this.timezone.textContent = model.timezone + ' GMT';
             }
 
             this.startButton = document.createElement('input');
