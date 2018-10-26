@@ -12,6 +12,7 @@ class ClockView {
         this.minuteHand = null;
         this.secondHand = null;
         this.digitalClock = null;
+        this.br = document.createElement('br');
 
         this.corner = 30;
 
@@ -60,18 +61,10 @@ class ClockView {
             this.root.appendChild(this.timezone);
 
             //создаём и отрисовываем представление конкретного вида часов
-            this.clockCreate();
-
-            //вставляем остальные элементы часов
-            this.element.appendChild(this.digitalClock);
-            this.element.appendChild(this.hourHand);
-            this.element.appendChild(this.minuteHand);
-            this.element.appendChild(this.secondHand);
-            this.element.appendChild(this.centerDot);
+            this.clockCreate(model);
 
         }
         // и обновляет время по данным из модели
-        this.digitalClock.textContent = model.date.toLocaleTimeString();
 
         this.sec = model.date.getSeconds();
         this.min = model.date.getMinutes();
@@ -97,6 +90,8 @@ export class ClockDOMView extends ClockView {
     render(model) {
 
         super.render(model); //вызов базовой реализации
+
+        this.digitalClock.textContent = model.date.toLocaleTimeString();
 
         this.secondHand.style.transform = `rotate(${this.sec*6}deg)`;
         this.minuteHand.style.transform = `rotate(${this.min*6}deg)`;
@@ -191,6 +186,13 @@ export class ClockDOMView extends ClockView {
             //каждый последующий блок с цифрой располагаем на 30градусов дальше
             this.corner += 30;
         }
+
+        //вставляем остальные элементы часов
+        this.element.appendChild(this.digitalClock);
+        this.element.appendChild(this.hourHand);
+        this.element.appendChild(this.minuteHand);
+        this.element.appendChild(this.secondHand);
+        this.element.appendChild(this.centerDot);
     }
 
     setChangeHandler(handler) {
@@ -198,6 +200,7 @@ export class ClockDOMView extends ClockView {
     }
 }
 
+//создаём класс-наследник SVG-часов
 export class ClockSVGView extends ClockView {
     constructor(root) {
         super(root); //вызываем базовый конструктор
@@ -206,6 +209,7 @@ export class ClockSVGView extends ClockView {
     render(model) {
         super.render(model); //вызов базовой реализации
 
+        this.digitalClock.textContent = model.date.toLocaleTimeString();
         this.secondHand.setAttribute('transform', `rotate(${this.sec*6} 400 300)`);
         this.minuteHand.setAttribute('transform', `rotate(${this.min*6} 400 300)`);
         this.hourHand.setAttribute('transform', `rotate(${this.hour*30 + this.min*0.5} 400 300)`);
@@ -214,7 +218,6 @@ export class ClockSVGView extends ClockView {
     clockCreate() {
         //SVG elements
         this.element = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        this.br = document.createElement('br');
         this.dialOfClock = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         this.centerDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         this.hourHand = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -314,6 +317,147 @@ export class ClockSVGView extends ClockView {
             //каждый последующий блок с цифрой располагаем на 30градусов дальше
             this.corner += 30;
         }
+
+        //вставляем остальные элементы часов
+        this.element.appendChild(this.digitalClock);
+        this.element.appendChild(this.hourHand);
+        this.element.appendChild(this.minuteHand);
+        this.element.appendChild(this.secondHand);
+        this.element.appendChild(this.centerDot);
+    }
+
+    setChangeHandler(handler) {
+        super.setChangeHandler(handler); //вызов базовой реализации
+    }
+}
+
+//создаём класс-наследник Canvas-часов
+export class ClockCanvasView extends ClockView {
+    constructor(root) {
+        super(root); //вызываем базовый конструктор
+        this.ctx = null;
+    }
+
+    render(model) {
+        super.render(model); //вызов базовой реализации
+
+        let secRadians = this.sec * 6 * (Math.PI / 180),
+            minRadians = this.min * 6 * (Math.PI / 180),
+            hourRadians = (this.hour * 30 + this.min * 0.5) * (Math.PI / 180);
+
+        this.clockCreate(model, secRadians, minRadians, hourRadians);
+    }
+
+    clockCreate(model, secRadians, minRadians, hourRadians) {
+
+        //Canvas elements
+        if (!this.element) {
+            this.root.appendChild(this.br);
+            this.element = document.createElement('canvas');
+            this.root.appendChild(this.element);
+            this.ctx = this.element.getContext('2d');
+            this.element.width = 1000;
+            this.element.height = 500;
+        }
+
+        //само табло
+        this.ctx.fillStyle = '#fcca66';
+        this.ctx.beginPath();
+        this.ctx.arc(400, 300, 200, 0, Math.PI * 2, false);
+        this.ctx.fill();
+
+        //создаём фоны цифр на табло, используя цикл
+        for (let i = 1; i < 13; i++) {
+
+            //фон цифр
+            this.ctx.translate(400, 300);
+            this.ctx.rotate((Math.PI / 180) * this.corner);
+            this.ctx.translate(-400, -300);
+            this.ctx.fillStyle = '#48b382';
+            this.ctx.beginPath();
+            this.ctx.arc(400, 140, 26, 0, Math.PI * 2, false);
+            this.ctx.fill();
+        }
+
+        //создаём цифры на табло, используя цикл
+        for (let i = 1; i < 13; i++) {
+
+            //рассчитываем положение цифр
+            let posX = 400 + 160 * Math.sin((Math.PI / 180) * this.corner),
+                posY = 140 + 160 * (1 - Math.cos((Math.PI / 180) * this.corner));
+
+            this.ctx.fillStyle = 'black';
+            this.ctx.font = 'italic bold 30px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(i, posX, posY);
+
+            //каждый последующий блок с цифрой располагаем на 30градусов дальше
+            this.corner += 30;
+        }
+
+        let currentTime = model.date.toLocaleTimeString();
+
+        this.ctx.fillStyle = 'black';
+        this.ctx.font = 'italic normal 30px Arial';
+        this.ctx.textBaseline = 'bottom';
+        this.ctx.fillText(currentTime, 400, 250);
+
+        //часовая стрелка
+        this.ctx.translate(400, 300);
+        this.ctx.rotate(hourRadians);
+        this.ctx.translate(-400, -300);
+
+        this.ctx.strokeStyle = 'darkgrey';
+        this.ctx.lineWidth = 20;
+        this.ctx.lineCap = 'round';
+        this.ctx.beginPath();
+        this.ctx.moveTo(400, 310);
+        this.ctx.lineTo(400, 220);
+        this.ctx.stroke();
+
+        this.ctx.translate(400, 300);
+        this.ctx.rotate(-hourRadians);
+        this.ctx.translate(-400, -300);
+
+        //минутная стрелка
+        this.ctx.translate(400, 300);
+        this.ctx.rotate(minRadians);
+        this.ctx.translate(-400, -300);
+
+        this.ctx.strokeStyle = 'grey';
+        this.ctx.lineWidth = 10;
+        this.ctx.beginPath();
+        this.ctx.moveTo(400, 310);
+        this.ctx.lineTo(400, 150);
+        this.ctx.stroke();
+
+        this.ctx.translate(400, 300);
+        this.ctx.rotate(-minRadians);
+        this.ctx.translate(-400, -300);
+
+        //секундная стрелка
+        this.ctx.translate(400, 300);
+        this.ctx.rotate(secRadians);
+        this.ctx.translate(-400, -300);
+
+        this.ctx.strokeStyle = 'red';
+        this.ctx.lineWidth = 2;
+        this.ctx.beginPath();
+        this.ctx.moveTo(400, 310);
+        this.ctx.lineTo(400, 120);
+        this.ctx.stroke();
+
+        this.ctx.translate(400, 300);
+        this.ctx.rotate(-secRadians);
+        this.ctx.translate(-400, -300);
+
+        //центральная точка
+        this.ctx.fillStyle = 'black';
+        this.ctx.beginPath();
+        this.ctx.arc(400, 300, 4, 0, Math.PI * 2, false);
+        this.ctx.fill();
+
     }
 
     setChangeHandler(handler) {

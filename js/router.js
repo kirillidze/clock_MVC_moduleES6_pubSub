@@ -4,12 +4,12 @@ import {
 } from "./model.js";
 import {
   ClockDOMView,
-  ClockSVGView
+  ClockSVGView,
+  ClockCanvasView
 } from "./view.js";
 import {
   Controller
 } from "./controller.js";
-
 
 class Router {
   constructor(map, rootElement) {
@@ -66,7 +66,7 @@ let map = {
     runController: rootElement => {
       new Controller(
         new Model(3),
-        new ClockDOMView(rootElement));
+        new ClockCanvasView(rootElement));
     }
   },
   '#clock3': {
